@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reservas Peluquería Canina</title>
+
+  <!-- Tailwind para estilos -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FullCalendar (CDN correcto con locales incluidos) -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <style>
+    body { background: #f7fafc; font-family: Inter, Arial, sans-serif; }
+    .card { background:white; padding:18px; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.08); max-width:980px; margin:28px auto; }
+    #calendar { min-height:450px; } 
+    #horarios button[disabled] { opacity:.5; cursor:not-allowed; }
+    .hora-btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:#16a34a; color:white; }
+    .hora-btn.hover { filter:brightness(.95); }
+    .hora-btn.ocupado { background:#cbd5e1; color:#475569; cursor:not-allowed; }
+    .hora-btn.seleccionada { background:#0ea5e9; box-shadow:0 4px 12px rgba(14,165,233,0.18); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="text-2xl font-bold text-orange-500 mb-4 text-center">Reserva tu turno</h1>
+
+    <!-- Paso 1 -->
+    <div id="step1">
+      <h2 class="font-semibold mb-2">Paso 1 — Datos de tu mascota</h2>
+      <div class="space-y-3">
+        <input id="nombre" class="w-full p-2 border rounded" placeholder="Tu nombre" />
+        <input id="mascota" class="w-full p-2 border rounded" placeholder="Nombre de la mascota" />
+        <input id="telefono" class="w-full p-2 border rounded" placeholder="Teléfono / WhatsApp" />
+        <div class="flex justify-end mt-2">
+          <button onclick="goToStep2()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">Siguiente ➜</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paso 2 -->
+    <div id="step2" style="display:none;">
+      <h2 class="font-semibold mb-2">Paso 2 — Elegí día y hora</h2>
+      <p class="text-sm text-gray-600 mb-2">Hacé clic en una fecha y luego marcá la hora. Después presioná <strong>Confirmar horario</strong>.</p>
+      <div id="calendar"></div>
+
+      <div id="horarios" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#f8fafc;">
+        <div class="flex items-center justify-between mb-2">
+          <div><strong>Horarios para <span id="fecha-seleccionada"></span>:</strong></div>
+          <div class="flex gap-2">
+            <button id="limpiarSeleccion" class="px-3 py-1 border rounded">Limpiar selección</button>
+            <button id="confirmHorarioBtn" class="px-3 py-1 bg-orange-500 text-white rounded" disabled>Confirmar horario</button>
+          </div>
+        </div>
+        <div id="lista-horarios" class="flex flex-wrap gap-2 mt-2"></div>
+        <div id="seleccionActual" class="mt-3 text-sm text-gray-600">No hay horario seleccionado.</div>
+      </div>
+
+      <div class="flex justify-between mt-4">
+        <button onclick="backToStep1()" class="px-3 py-2 rounded border">◀ Atrás</button>
+      </div>
+    </div>
+
+    <!-- Paso 3 -->
+    <div id="step3" style="display:none;" class="text-center">
+      <h2 class="font-semibold mb-2">Confirmación</h2>
+      <div id="resumen" class="mb-4 whitespace-pre-line"></div>
+      <p class="text-green-600 font-bold">¡Tu turno ha sido reservado con éxito!</p>
+      <div class="flex justify-center mt-4">
+        <button onclick="volverAlInicio()" class="px-4 py-2 rounded border">Nueva reserva</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* --------------------- CONFIG --------------------- */
+const horariosDisponibles = [
+  "09:00","09:30","10:00","10:30","11:00","11:30",
+  "17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30"
+];
+const closedDays = [];        // ej: ['2025-09-20']
+const occupiedSlots = [];     // ej: ['2025-09-18_09:30']
+/* -------------------------------------------------- */
+
+let reserva = { nombre:"", mascota:"", telefono:"", fecha:"", hora:"" };
+let selectedSlot = null; // { fechaISO: "YYYY-MM-DD", hora: "HH:MM", slotId: "YYYY-MM-DD_HH:MM", btn: HTMLElement }
+
+/* NAV */
+function goToStep2(){
+  const n = document.getElementById('nombre').value.trim();
+  const m = document.getElementById('mascota').value.trim();
+  const t = document.getElementById('telefono').value.trim();
+  if(!n||!m||!t){ alert('Completá nombre, mascota y teléfono.'); return; }
+  reserva.nombre=n; reserva.mascota=m; reserva.telefono=t;
+
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='block';
+
+  iniciarCalendario();
+}
+
+function backToStep1(){
+  clearSelection();
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step1').style.display='block';
+}
+
+function goToStep3(){
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step3').style.display='block';
+  document.getElementById('resumen').innerText =
+    `Nombre: ${reserva.nombre}\nMascota: ${reserva.mascota}\nTeléfono: ${reserva.telefono}\nTurno: ${reserva.fecha} — ${reserva.hora}`;
+}
+
+function volverAlInicio(){
+  reserva = { nombre:"", mascota:"", telefono:"", fecha:"", hora:"" };
+  selectedSlot = null;
+  document.getElementById('nombre').value='';
+  document.getElementById('mascota').value='';
+  document.getElementById('telefono').value='';
+  document.getElementById('step3').style.display='none';
+  document.getElementById('step1').style.display='block';
+  // refrescar calendario si querés
+  if(window._fc_calendar_instance) window._fc_calendar_instance.refetchEvents();
+}
+
+/* CALENDAR */
+function iniciarCalendario(){
+  const calendarEl = document.getElementById('calendar');
+  calendarEl.innerHTML = ''; // limpiar antes de reinicializar
+
+  const closedEvents = closedDays.map(d => ({
+    title:'CERRADO',
+    start: d,
+    allDay: true,
+    display: 'background',
+    color:'#ffdddd'
+  }));
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'es',
+    selectable: true,
+    height: 'auto',
+    events: closedEvents,
+    dateClick: function(info){
+      handleDateClick(info);
+    }
+  });
+
+  calendar.render();
+  window._fc_calendar_instance = calendar;
+}
+
+/* click en fecha -> mostrar horarios */
+function handleDateClick(info){
+  const fecha = info.dateStr;
+  const dia = info.date.getDay();
+
+  if(dia === 0){ alert('No hay atención los domingos.'); return; }
+  if(fecha < todayISO()){ alert('No se pueden reservar días pasados.'); return; }
+  if(closedDays.includes(fecha)){ alert('Ese día la peluquería está cerrada.'); return; }
+
+  showHorariosFor(fecha);
+}
+
+/* mostrar horarios disponibles */
+function showHorariosFor(fecha){
+  const cont = document.getElementById('horarios');
+  const lista = document.getElementById('lista-horarios');
+  const fechaLabel = document.getElementById('fecha-seleccionada');
+  const seleccionText = document.getElementById('seleccionActual');
+  const confirmBtn = document.getElementById('confirmHorarioBtn');
+  const limpiarBtn = document.getElementById('limpiarSeleccion');
+
+  // reset selección previa cuando se cambie de día
+  clearSelection();
+
+  fechaLabel.innerText = humanDateLabel(fecha);
+  lista.innerHTML = '';
+
+  horariosDisponibles.forEach(hora => {
+    const slotId = `${fecha}_${hora}`;
+    const btn = document.createElement('button');
+    btn.textContent = hora;
+    btn.className = 'hora-btn';
+
+    if(occupiedSlots.includes(slotId)){
+      btn.disabled = true;
+      btn.className = 'hora-btn ocupado';
+      btn.textContent = `${hora} • ocupado`;
+    }
+
+    btn.addEventListener('click', () => {
+      // marcar visualmente la selección (sin confirmar aún)
+      // desmarcar anterior
+      document.querySelectorAll('.hora-btn.seleccionada').forEach(x => x.classList.remove('seleccionada'));
+      if(btn.disabled) return;
+
+      btn.classList.add('seleccionada');
+      selectedSlot = { fechaISO: fecha, hora: hora, slotId: slotId, btn: btn };
+      seleccionText.innerText = `Seleccionado: ${humanDateLabel(fecha)} — ${hora}`;
+      confirmBtn.disabled = false;
+    });
+
+    lista.appendChild(btn);
+  });
+
+  // configurar botones limpiar y confirmar
+  limpiarBtn.onclick = () => clearSelection();
+  confirmBtn.onclick = () => confirmSelectedSlot();
+
+  cont.style.display = 'block';
+  document.getElementById('lista-horarios').focus?.();
+  document.getElementById('confirmHorarioBtn').disabled = true;
+  seleccionText.innerText = 'No hay horario seleccionado.';
+}
+
+/* limpiar selección temporal (sin confirmar) */
+function clearSelection(){
+  selectedSlot = null;
+  document.querySelectorAll('.hora-btn.seleccionada').forEach(x => x.classList.remove('seleccionada'));
+  document.getElementById('confirmHorarioBtn').disabled = true;
+  document.getElementById('seleccionActual').innerText = 'No hay horario seleccionado.';
+}
+
+/* confirmar selección (ahora sí reserva y avanza) */
+function confirmSelectedSlot(){
+  if(!selectedSlot) return alert('No hay horario seleccionado.');
+
+  // guardar reserva
+  reserva.fecha = humanDateLabel(selectedSlot.fechaISO);
+  reserva.hora = selectedSlot.hora;
+
+  // marcar ocupado (memoria)
+  occupiedSlots.push(selectedSlot.slotId);
+
+  // añadir evento visual en FullCalendar
+  try{
+    const isoStart = `${selectedSlot.fechaISO}T${selectedSlot.hora}:00`;
+    window._fc_calendar_instance.addEvent({ title:'Reservado', start: isoStart, allDay:false, color:'#2b8a3e' });
+  }catch(e){ console.warn('No se pudo añadir evento visual:', e); }
+
+  // limpiar selección UI y pasar al paso 3
+  clearSelection();
+  goToStep3();
+}
+
+/* helpers */
+function todayISO(){ return (new Date()).toISOString().slice(0,10); }
+function humanDateLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('es-AR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+}
+</script>
+</body>
+</html>
