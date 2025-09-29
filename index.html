@@ -1,259 +1,231 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Reservas Peluquería Canina</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peluquería Canina - Turnos</title>
 
-  <!-- Tailwind para estilos -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FullCalendar (CDN correcto con locales incluidos) -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <style>
-    body { background: #f7fafc; font-family: Inter, Arial, sans-serif; }
-    .card { background:white; padding:18px; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.08); max-width:980px; margin:28px auto; }
-    #calendar { min-height:450px; } 
-    #horarios button[disabled] { opacity:.5; cursor:not-allowed; }
-    .hora-btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:#16a34a; color:white; }
-    .hora-btn.hover { filter:brightness(.95); }
-    .hora-btn.ocupado { background:#cbd5e1; color:#475569; cursor:not-allowed; }
-    .hora-btn.seleccionada { background:#0ea5e9; box-shadow:0 4px 12px rgba(14,165,233,0.18); }
+    body {
+      font-family: Arial, sans-serif;
+      background: #fefefe;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+    h2 {
+      color: #ff6600;
+      border-bottom: 2px solid #ff6600;
+      padding-bottom: 5px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+    button {
+      background: #ff6600;
+      border: none;
+      padding: 12px 18px;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #e55a00;
+    }
+    #calendar {
+      margin-top: 20px;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1 class="text-2xl font-bold text-orange-500 mb-4 text-center">Reserva tu turno</h1>
-
+  <div class="container">
     <!-- Paso 1 -->
     <div id="step1">
-      <h2 class="font-semibold mb-2">Paso 1 — Datos de tu mascota</h2>
-      <div class="space-y-3">
-        <input id="nombre" class="w-full p-2 border rounded" placeholder="Tu nombre" />
-        <input id="mascota" class="w-full p-2 border rounded" placeholder="Nombre de la mascota" />
-        <input id="telefono" class="w-full p-2 border rounded" placeholder="Teléfono / WhatsApp" />
-        <div class="flex justify-end mt-2">
-          <button onclick="goToStep2()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">Siguiente ➜</button>
-        </div>
+      <h2>Solicitud para Turno de Peluquería</h2>
+      
+      <div class="form-group">
+        <label for="nombreDueno">Nombre del dueño:</label>
+        <input type="text" id="nombreDueno" required>
       </div>
+
+      <div class="form-group">
+        <label for="celular">Celular:</label>
+        <input type="tel" id="celular" required>
+      </div>
+
+      <h3>Datos de la mascota</h3>
+      <div class="form-group">
+        <label for="cantidadMascotas">Cantidad de mascotas:</label>
+        <select id="cantidadMascotas">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="tamanioMascota">Tamaño de la mascota:</label>
+        <select id="tamanioMascota">
+          <option value="Grande">Grande</option>
+          <option value="Mediano">Mediano</option>
+          <option value="Pequeño">Pequeño</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="raza">Raza:</label>
+        <input type="text" id="raza" required>
+      </div>
+
+      <div class="form-group">
+        <label>¿Presenta algún problema de salud?</label>
+        <div class="radio-group">
+          <label><input type="radio" name="salud" value="No" checked> No</label>
+          <label><input type="radio" name="salud" value="Sí"> Sí</label>
+        </div>
+        <textarea id="descripcionSalud" placeholder="Describe el problema (si aplica)"></textarea>
+      </div>
+
+      <button onclick="goToStep2()">Siguiente</button>
     </div>
 
     <!-- Paso 2 -->
-    <div id="step2" style="display:none;">
-      <h2 class="font-semibold mb-2">Paso 2 — Elegí día y hora</h2>
-      <p class="text-sm text-gray-600 mb-2">Hacé clic en una fecha y luego marcá la hora. Después presioná <strong>Confirmar horario</strong>.</p>
+    <div id="step2" class="hidden">
+      <h2>Selecciona fecha y hora</h2>
       <div id="calendar"></div>
-
-      <div id="horarios" style="display:none; margin-top:12px; padding:12px; border-radius:8px; background:#f8fafc;">
-        <div class="flex items-center justify-between mb-2">
-          <div><strong>Horarios para <span id="fecha-seleccionada"></span>:</strong></div>
-          <div class="flex gap-2">
-            <button id="limpiarSeleccion" class="px-3 py-1 border rounded">Limpiar selección</button>
-            <button id="confirmHorarioBtn" class="px-3 py-1 bg-orange-500 text-white rounded" disabled>Confirmar horario</button>
-          </div>
-        </div>
-        <div id="lista-horarios" class="flex flex-wrap gap-2 mt-2"></div>
-        <div id="seleccionActual" class="mt-3 text-sm text-gray-600">No hay horario seleccionado.</div>
-      </div>
-
-      <div class="flex justify-between mt-4">
-        <button onclick="backToStep1()" class="px-3 py-2 rounded border">◀ Atrás</button>
-      </div>
+      <button onclick="goToStep1()">Volver</button>
+      <button onclick="goToStep3()">Siguiente</button>
     </div>
 
     <!-- Paso 3 -->
-    <div id="step3" style="display:none;" class="text-center">
-      <h2 class="font-semibold mb-2">Confirmación</h2>
-      <div id="resumen" class="mb-4 whitespace-pre-line"></div>
-      <p class="text-green-600 font-bold">¡Tu turno ha sido reservado con éxito!</p>
-      <div class="flex justify-center mt-4">
-        <button onclick="volverAlInicio()" class="px-4 py-2 rounded border">Nueva reserva</button>
-      </div>
+    <div id="step3" class="hidden">
+      <h2>Confirmación del Turno</h2>
+      <p><strong>Nombre dueño:</strong> <span id="resNombre"></span></p>
+      <p><strong>Celular:</strong> <span id="resCelular"></span></p>
+      <p><strong>Cantidad de mascotas:</strong> <span id="resCantidad"></span></p>
+      <p><strong>Tamaño:</strong> <span id="resTamanio"></span></p>
+      <p><strong>Raza:</strong> <span id="resRaza"></span></p>
+      <p><strong>Problema de salud:</strong> <span id="resSalud"></span></p>
+      <p><strong>Fecha:</strong> <span id="resFecha"></span></p>
+      <p><strong>Hora:</strong> <span id="resHora"></span></p>
+
+      <button onclick="goToStep2()">Volver</button>
+      <button onclick="confirmarTurno()">Confirmar Turno</button>
     </div>
   </div>
 
-<script>
-/* --------------------- CONFIG --------------------- */
-const horariosDisponibles = [
-  "09:00","09:30","10:00","10:30","11:00","11:30",
-  "17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30"
-];
-const closedDays = [];        // ej: ['2025-09-20']
-const occupiedSlots = [];     // ej: ['2025-09-18_09:30']
-/* -------------------------------------------------- */
+  <script>
+    let calendar;
+    let fechaSeleccionada = null;
+    let horaSeleccionada = null;
 
-let reserva = { nombre:"", mascota:"", telefono:"", fecha:"", hora:"" };
-let selectedSlot = null; // { fechaISO: "YYYY-MM-DD", hora: "HH:MM", slotId: "YYYY-MM-DD_HH:MM", btn: HTMLElement }
+    // Paso 1 → Paso 2
+    function goToStep2() {
+      document.getElementById("step1").classList.add("hidden");
+      document.getElementById("step2").classList.remove("hidden");
 
-/* NAV */
-function goToStep2(){
-  const n = document.getElementById('nombre').value.trim();
-  const m = document.getElementById('mascota').value.trim();
-  const t = document.getElementById('telefono').value.trim();
-  if(!n||!m||!t){ alert('Completá nombre, mascota y teléfono.'); return; }
-  reserva.nombre=n; reserva.mascota=m; reserva.telefono=t;
-
-  document.getElementById('step1').style.display='none';
-  document.getElementById('step2').style.display='block';
-
-  iniciarCalendario();
-}
-
-function backToStep1(){
-  clearSelection();
-  document.getElementById('step2').style.display='none';
-  document.getElementById('step1').style.display='block';
-}
-
-function goToStep3(){
-  document.getElementById('step2').style.display='none';
-  document.getElementById('step3').style.display='block';
-  document.getElementById('resumen').innerText =
-    `Nombre: ${reserva.nombre}\nMascota: ${reserva.mascota}\nTeléfono: ${reserva.telefono}\nTurno: ${reserva.fecha} — ${reserva.hora}`;
-}
-
-function volverAlInicio(){
-  reserva = { nombre:"", mascota:"", telefono:"", fecha:"", hora:"" };
-  selectedSlot = null;
-  document.getElementById('nombre').value='';
-  document.getElementById('mascota').value='';
-  document.getElementById('telefono').value='';
-  document.getElementById('step3').style.display='none';
-  document.getElementById('step1').style.display='block';
-  // refrescar calendario si querés
-  if(window._fc_calendar_instance) window._fc_calendar_instance.refetchEvents();
-}
-
-/* CALENDAR */
-function iniciarCalendario(){
-  const calendarEl = document.getElementById('calendar');
-  calendarEl.innerHTML = ''; // limpiar antes de reinicializar
-
-  const closedEvents = closedDays.map(d => ({
-    title:'CERRADO',
-    start: d,
-    allDay: true,
-    display: 'background',
-    color:'#ffdddd'
-  }));
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    locale: 'es',
-    selectable: true,
-    height: 'auto',
-    events: closedEvents,
-    dateClick: function(info){
-      handleDateClick(info);
-    }
-  });
-
-  calendar.render();
-  window._fc_calendar_instance = calendar;
-}
-
-/* click en fecha -> mostrar horarios */
-function handleDateClick(info){
-  const fecha = info.dateStr;
-  const dia = info.date.getDay();
-
-  if(dia === 0){ alert('No hay atención los domingos.'); return; }
-  if(fecha < todayISO()){ alert('No se pueden reservar días pasados.'); return; }
-  if(closedDays.includes(fecha)){ alert('Ese día la peluquería está cerrada.'); return; }
-
-  showHorariosFor(fecha);
-}
-
-/* mostrar horarios disponibles */
-function showHorariosFor(fecha){
-  const cont = document.getElementById('horarios');
-  const lista = document.getElementById('lista-horarios');
-  const fechaLabel = document.getElementById('fecha-seleccionada');
-  const seleccionText = document.getElementById('seleccionActual');
-  const confirmBtn = document.getElementById('confirmHorarioBtn');
-  const limpiarBtn = document.getElementById('limpiarSeleccion');
-
-  // reset selección previa cuando se cambie de día
-  clearSelection();
-
-  fechaLabel.innerText = humanDateLabel(fecha);
-  lista.innerHTML = '';
-
-  horariosDisponibles.forEach(hora => {
-    const slotId = `${fecha}_${hora}`;
-    const btn = document.createElement('button');
-    btn.textContent = hora;
-    btn.className = 'hora-btn';
-
-    if(occupiedSlots.includes(slotId)){
-      btn.disabled = true;
-      btn.className = 'hora-btn ocupado';
-      btn.textContent = `${hora} • ocupado`;
+      if (!calendar) initCalendar();
     }
 
-    btn.addEventListener('click', () => {
-      // marcar visualmente la selección (sin confirmar aún)
-      // desmarcar anterior
-      document.querySelectorAll('.hora-btn.seleccionada').forEach(x => x.classList.remove('seleccionada'));
-      if(btn.disabled) return;
+    // Paso 2 → Paso 1
+    function goToStep1() {
+      document.getElementById("step2").classList.add("hidden");
+      document.getElementById("step1").classList.remove("hidden");
+    }
 
-      btn.classList.add('seleccionada');
-      selectedSlot = { fechaISO: fecha, hora: hora, slotId: slotId, btn: btn };
-      seleccionText.innerText = `Seleccionado: ${humanDateLabel(fecha)} — ${hora}`;
-      confirmBtn.disabled = false;
-    });
+    // Paso 2 → Paso 3
+    function goToStep3() {
+      if (!fechaSeleccionada || !horaSeleccionada) {
+        alert("Selecciona una fecha y hora.");
+        return;
+      }
+      document.getElementById("step2").classList.add("hidden");
+      document.getElementById("step3").classList.remove("hidden");
 
-    lista.appendChild(btn);
-  });
+      document.getElementById("resNombre").innerText = document.getElementById("nombreDueno").value;
+      document.getElementById("resCelular").innerText = document.getElementById("celular").value;
+      document.getElementById("resCantidad").innerText = document.getElementById("cantidadMascotas").value;
+      document.getElementById("resTamanio").innerText = document.getElementById("tamanioMascota").value;
+      document.getElementById("resRaza").innerText = document.getElementById("raza").value;
+      document.getElementById("resSalud").innerText = document.querySelector("input[name='salud']:checked").value + " " + document.getElementById("descripcionSalud").value;
+      document.getElementById("resFecha").innerText = fechaSeleccionada;
+      document.getElementById("resHora").innerText = horaSeleccionada;
+    }
 
-  // configurar botones limpiar y confirmar
-  limpiarBtn.onclick = () => clearSelection();
-  confirmBtn.onclick = () => confirmSelectedSlot();
+    // Inicializa el calendario
+    function initCalendar() {
+      const calendarEl = document.getElementById("calendar");
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        selectable: true,
+        dateClick: function(info) {
+          fechaSeleccionada = info.dateStr;
+          horaSeleccionada = prompt("Selecciona una hora (ej: 10:00, 14:30):");
+        }
+      });
+      calendar.render();
+    }
 
-  cont.style.display = 'block';
-  document.getElementById('lista-horarios').focus?.();
-  document.getElementById('confirmHorarioBtn').disabled = true;
-  seleccionText.innerText = 'No hay horario seleccionado.';
-}
+    // Confirmar turno y enviar a Google Sheets
+    function confirmarTurno() {
+      const datosTurno = {
+        nombreDueno: document.getElementById("nombreDueno").value,
+        celular: document.getElementById("celular").value,
+        cantidadMascotas: document.getElementById("cantidadMascotas").value,
+        tamanioMascota: document.getElementById("tamanioMascota").value,
+        raza: document.getElementById("raza").value,
+        problemaSalud: document.querySelector("input[name='salud']:checked").value,
+        descripcionSalud: document.getElementById("descripcionSalud").value,
+        fecha: fechaSeleccionada,
+        hora: horaSeleccionada
+      };
 
-/* limpiar selección temporal (sin confirmar) */
-function clearSelection(){
-  selectedSlot = null;
-  document.querySelectorAll('.hora-btn.seleccionada').forEach(x => x.classList.remove('seleccionada'));
-  document.getElementById('confirmHorarioBtn').disabled = true;
-  document.getElementById('seleccionActual').innerText = 'No hay horario seleccionado.';
-}
+      enviarTurnoAGoogleSheets(datosTurno);
+      alert("¡Turno confirmado!");
+    }
 
-/* confirmar selección (ahora sí reserva y avanza) */
-function confirmSelectedSlot(){
-  if(!selectedSlot) return alert('No hay horario seleccionado.');
-
-  // guardar reserva
-  reserva.fecha = humanDateLabel(selectedSlot.fechaISO);
-  reserva.hora = selectedSlot.hora;
-
-  // marcar ocupado (memoria)
-  occupiedSlots.push(selectedSlot.slotId);
-
-  // añadir evento visual en FullCalendar
-  try{
-    const isoStart = `${selectedSlot.fechaISO}T${selectedSlot.hora}:00`;
-    window._fc_calendar_instance.addEvent({ title:'Reservado', start: isoStart, allDay:false, color:'#2b8a3e' });
-  }catch(e){ console.warn('No se pudo añadir evento visual:', e); }
-
-  // limpiar selección UI y pasar al paso 3
-  clearSelection();
-  goToStep3();
-}
-
-/* helpers */
-function todayISO(){ return (new Date()).toISOString().slice(0,10); }
-function humanDateLabel(dateStr){
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('es-AR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
-}
-</script>
+    // Envío a Google Sheets
+    function enviarTurnoAGoogleSheets(datosTurno) {
+      const url = "https://script.google.com/macros/s/AKfycbwHrjkchQHrB0HtPohphN993dJkLpYpi4Ibe5H2vuwBJjukaIQ3TQjHMFDndBeaaOo/exec"; // ← Reemplaza por tu URL de Apps Script
+      fetch(url, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosTurno)
+      })
+      .then(() => console.log("Turno enviado a Google Sheets"))
+      .catch(err => console.error("Error al enviar:", err));
+    }
+  </script>
 </body>
 </html>
